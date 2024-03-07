@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Literal
 from urllib.parse import urlparse
 
@@ -39,14 +40,18 @@ def article_id_or_url(candidate: str) -> str | None:
 
 def parse_legifrance_url(
     url: str,
-) -> tuple[Literal["article"], str] | tuple[Literal["section"], str, str] | None:
+) -> (
+    tuple[Literal["article"], str]
+    | tuple[Literal["article"], str, int]  # article version at a given time
+    | tuple[Literal["section"], str, str]
+):
     """
     Parse a Legifrance URL, see if it matches an article or a section of a code,
     and return the corresponding type and identifier(s).
     """
     parsed_url = urlparse(url)
     if parsed_url.hostname != "www.legifrance.gouv.fr":
-        return None
+        raise ValueError("Unrecognized host", parsed_url.hostname)
 
     path_elems = parsed_url.path.split("/")[1:]
     path_elems = [e for e in path_elems if e]  # remove empty path segments
@@ -54,6 +59,10 @@ def parse_legifrance_url(
     match path_elems:
         case ["codes", "article_lc", article_id]:
             return "article", article_id
+        case ["codes", "article_lc", article_id, at_time]:
+            dt = datetime.fromisoformat(at_time).replace(tzinfo=timezone.utc)
+            timestamp = int(dt.timestamp() * 1000)
+            return "article", article_id, timestamp
         case [
             "codes",
             "section_lc",
@@ -63,4 +72,4 @@ def parse_legifrance_url(
         ]:  # ignore anchors in sections
             return "section", text_id, section_id
         case _:
-            return None
+            raise ValueError("Could not parse URL", url)
