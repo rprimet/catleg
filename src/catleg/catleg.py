@@ -96,12 +96,18 @@ def skeleton(
     print(_skeleton(url_or_textid, sectionid))
 
 
-def _lf_article(aid_or_url: str):
-    article_id = article_id_or_url(aid_or_url)
-    if article_id is None:
-        raise ValueError(f"Sorry, I do not know how to fetch {aid_or_url}")
+def _lf_article(aid_or_url: str, at_time: int | None = None):
+    res = article_id_or_url(aid_or_url)
+    # XXX TODO
+    match res:
+        case [article_id, parsed_at_time]:
+            if at_time is not None:
+                raise ValueError("Incompatible options: XXX")
+            at_time = parsed_at_time
 
     back = get_backend("legifrance")
+    if at_time is not None:
+        article_id = back.article_id_at_time(at_time)
     return asyncio.run(back.query_article_legi(article_id))
 
 
@@ -119,6 +125,7 @@ def lf_article(
     Retrieve an article from Legifrance.
     Outputs the raw Legifrance JSON representation.
     """
+    # todo handle at_time (date or timestamp)
     print(
         json.dumps(
             _lf_article(aid_or_url),

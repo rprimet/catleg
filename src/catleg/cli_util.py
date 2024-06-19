@@ -21,7 +21,8 @@ def set_basic_loglevel():
         logging.basicConfig(level=log_level.upper())
 
 
-def article_id_or_url(candidate: str) -> str | None:
+def article_id_or_url(candidate: str) -> str | tuple[str, int]:
+    """ """
     match find_id_in_string(candidate, strict=True):
         case (_, article_id):
             assert isinstance(
@@ -31,11 +32,13 @@ def article_id_or_url(candidate: str) -> str | None:
     try:
         parse_res = parse_legifrance_url(candidate)
     except ValueError:
-        return None
+        raise ValueError("Cannot process article ", candidate)
     match parse_res:
+        case ["article", article_id, at_time]:
+            return article_id, at_time
         case ["article", article_id]:
             return article_id
-    return None
+    raise ValueError("Cannot process article ", candidate)
 
 
 def parse_legifrance_url(
