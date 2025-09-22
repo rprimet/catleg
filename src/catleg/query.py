@@ -60,13 +60,17 @@ class Backend(Protocol):
 
 
 class LegifranceBackend(Backend):
-    API_BASE_URL = "https://api.piste.gouv.fr/dila/legifrance/lf-engine-app"
-
-    def __init__(self, client_id, client_secret):
+    def __init__(
+        self,
+        client_id,
+        client_secret,
+        base_url="https://api.piste.gouv.fr/dila/legifrance/lf-engine-app",
+    ):
         headers = {"Accept": "application/json"}
         self.client = httpx.AsyncClient(
             auth=LegifranceAuth(client_id, client_secret), headers=headers
         )
+        self.base_url = base_url
 
     async def article(self, id_or_url: str) -> Article | None:
         reply = await self.query_article_legi(id_or_url)
@@ -86,16 +90,14 @@ class LegifranceBackend(Backend):
 
     async def _list_codes(self, page_size=20):
         params = {"pageSize": page_size, "pageNumber": 1, "states": ["VIGUEUR"]}
-        reply = await self.client.post(f"{self.API_BASE_URL}/list/code", json=params)
+        reply = await self.client.post(f"{self.base_url}/list/code", json=params)
         reply.raise_for_status()
         reply_json = reply.json()
         nb_results = reply_json["totalResultNumber"]
         results = reply_json["results"]
         while len(results) < nb_results:
             params["pageNumber"] += 1
-            reply = await self.client.post(
-                f"{self.API_BASE_URL}/list/code", json=params
-            )
+            reply = await self.client.post(f"{self.base_url}/list/code", json=params)
             reply.raise_for_status()
             reply_json = reply.json()
             results += reply_json["results"]
@@ -104,7 +106,7 @@ class LegifranceBackend(Backend):
     async def code_toc(self, id: str):
         params = {"textId": id, "date": str(date.today())}
         reply = await self.client.post(
-            f"{self.API_BASE_URL}/consult/legi/tableMatieres", json=params
+            f"{self.base_url}/consult/legi/tableMatieres", json=params
         )
         reply.raise_for_status()
         if "sections" not in reply.json():
@@ -115,10 +117,10 @@ class LegifranceBackend(Backend):
         typ, id = parse_article_id(id)
         match typ:
             case ArticleType.LEGIARTI | ArticleType.JORFARTI:
-                url = f"{self.API_BASE_URL}/consult/getArticle"
+                url = f"{self.base_url}/consult/getArticle"
                 params = {"id": id}
             case ArticleType.CETATEXT:
-                url = f"{self.API_BASE_URL}/consult/juri"
+                url = f"{self.base_url}/consult/juri"
                 params = {"textId": id}
             case _:
                 raise ValueError("Unknown article type")
@@ -133,9 +135,15 @@ class LegifranceBackend(Backend):
 
 def get_backend(spec: str):
     # TODO: multiple backends, fallbacks...
-    assert spec == "legifrance"
-    client_id, client_secret = _get_legifrance_credentials(raise_if_missing=True)
-    return LegifranceBackend(client_id, client_secret)
+    # LegifranceBackend: parametrize by base path
+    assert spec in ["legifrance", "legifrance/proxy"]
+    # We only require credentials for legifrance, as 'legifrance/proxy' is
+    # our project-run unauthenticated proxy.
+    if spec == "legifrance":
+        client_id, client_secret = _get_legifrance_credentials(raise_if_missing=True)
+        return LegifranceBackend(client_id, client_secret)
+    else:
+        return LegifranceBackend(None, None, "https://legiproxy.catala-lang.org/v1")
 
 
 class LegifranceArticle(Article):
