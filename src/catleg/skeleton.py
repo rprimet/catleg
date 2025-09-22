@@ -12,7 +12,7 @@ async def markdown_skeleton(textid: str, sectionid: str) -> str:
     if sectionid[:8].upper() != "LEGISCTA":
         raise ValueError("Expected section identifier (should start with 'SCTA')")
 
-    back = get_backend("legifrance")
+    back = get_backend()
     toc = await back.code_toc(textid)
 
     nodes = dropwhile(
@@ -52,7 +52,7 @@ async def article_skeleton(articleid: str, breadcrumbs: bool = True) -> str:
     str
        Markdown-formatted article
     """
-    back = get_backend("legifrance")
+    back = get_backend()
     # This uses the Legifrance API directly, not the backend abstraction
     raw_article_json = await back.query_article_legi(articleid)
     return _article_skeleton(raw_article_json=raw_article_json, breadcrumbs=breadcrumbs)

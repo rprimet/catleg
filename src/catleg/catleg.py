@@ -101,7 +101,7 @@ def _lf_article(aid_or_url: str):
     if article_id is None:
         raise ValueError(f"Sorry, I do not know how to fetch {aid_or_url}")
 
-    back = get_backend("legifrance")
+    back = get_backend()
     return asyncio.run(back.query_article_legi(article_id))
 
 
@@ -133,7 +133,7 @@ def codes():
     """
     Retrieve a list of available codes.
     """
-    back = get_backend("legifrance")
+    back = get_backend()
     print(json.dumps(asyncio.run(back.list_codes()), indent=2, ensure_ascii=False))
 
 
@@ -142,7 +142,7 @@ def toc(code: str):
     """
     Retrieve the table of contents for a given code.
     """
-    back = get_backend("legifrance")
+    back = get_backend()
     print(json.dumps(asyncio.run(back.code_toc(code)), indent=2, ensure_ascii=False))
 
 

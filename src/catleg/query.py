@@ -133,7 +133,10 @@ class LegifranceBackend(Backend):
         return reply.json()
 
 
-def get_backend(spec: str):
+def get_backend(spec: str | None = None):
+    if spec is None:
+        spec = settings.get("backend", "legifrance/proxy")
+
     # TODO: multiple backends, fallbacks...
     # LegifranceBackend: parametrize by base path
     assert spec in ["legifrance", "legifrance/proxy"]
@@ -143,6 +146,7 @@ def get_backend(spec: str):
         client_id, client_secret = _get_legifrance_credentials(raise_if_missing=True)
         return LegifranceBackend(client_id, client_secret)
     else:
+        # XXX should we make the base path parametrizable?
         return LegifranceBackend(None, None, "https://legiproxy.catala-lang.org/v1")
 
 

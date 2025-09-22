@@ -27,7 +27,7 @@ def _json_from_test_file(fname):
     reason="this test requires legifrance credentials",
 )
 def test_query_article():
-    back = get_backend("legifrance")
+    back = get_backend()
     article = asyncio.run(back.article("LEGIARTI000038814944"))
     assert "logement" in article.text
 
@@ -37,7 +37,7 @@ def test_query_article():
     reason="this test requires legifrance credentials",
 )
 def test_query_article_2():
-    back = get_backend("legifrance")
+    back = get_backend()
     article = asyncio.run(back.article("CETATEXT000035260342"))
     assert article is not None
 
@@ -74,7 +74,7 @@ def test_section_skeleton():
     reason="this test requires legifrance credentials",
 )
 def test_query_articles():
-    back = get_backend("legifrance")
+    back = get_backend()
     art1, art2 = asyncio.run(
         back.articles(["LEGIARTI000038814944", "LEGIARTI000038814948"])
     )
@@ -88,7 +88,7 @@ def test_query_articles():
 )
 @pytest.mark.parametrize("page_size", [20, 100])
 def test_query_codes(page_size):
-    back = get_backend("legifrance")
+    back = get_backend()
     codes, nb_results = asyncio.run(back._list_codes(page_size))
     assert nb_results == len(codes)
 

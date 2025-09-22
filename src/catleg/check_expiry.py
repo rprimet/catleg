@@ -16,7 +16,7 @@ async def check_expiry(f: TextIO, *, file_path: Path | None = None):
     # parse articles from file
     articles = parse_catala_file(f, file_path=file_path)
 
-    back = get_backend("legifrance")
+    back = get_backend()
     ref_articles = await back.articles([article.id.upper() for article in articles])
     has_expired_articles = False
     now = datetime.now(timezone.utc)
