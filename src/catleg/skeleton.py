@@ -134,12 +134,23 @@ def _article_skeleton(raw_article_json, breadcrumbs: bool = True):
 
 
 def _preorder(node, level=1):
-    """Preorder traversal of articles and sections"""
+    """Preorder traversal of articles and sections, ordered by intOrdre.
+
+    Note: code TOC nodes can have both articles and sections as direct
+    children (interleaved). intOrdre is used to preserve the correct
+    document order, matching the same approach used for JORF content.
+    """
     yield node, level
-    for article in node["articles"]:
-        yield article, level
-    for section in node["sections"]:
-        yield from _preorder(section, level + 1)
+    items = []
+    for article in node.get("articles", []):
+        items.append((article.get("intOrdre", 0), "article", article))
+    for section in node.get("sections", []):
+        items.append((section.get("intOrdre", 0), "section", section))
+    for _, kind, child in sorted(items, key=lambda t: t[0]):
+        if kind == "article":
+            yield child, level
+        else:
+            yield from _preorder(child, level + 1)
 
 
 def _formatted_article(article):
